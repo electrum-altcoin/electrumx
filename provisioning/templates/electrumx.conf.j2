@@ -1,0 +1,11 @@
+COIN = {{ coin_name }}
+NET = {{ coin_network }}
+DB_DIRECTORY = {{ database_dir }}
+DAEMON_URL = http://{{ coind_user }}:{{ coind_password }}@{{ coind_host }}:{{ coind_port }}/
+DB_ENGINE = leveldb
+EVENT_LOOP_POLICY = uvloop
+MAX_SEND = {{ max_send }}
+
+SSL_CERTFILE=/etc/electrumx/server.crt
+SSL_KEYFILE=/etc/electrumx/server.key
+ALLOW_ROOT=1

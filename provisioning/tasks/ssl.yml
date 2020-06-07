@@ -1,0 +1,23 @@
+---
+- name: Install OpenSSL
+  apt: name="{{ item }}" state=present
+  with_items:
+    - openssl
+
+- name: Generate SSL Certificates
+  script: ssl.sh
+
+- name: Create SSL Certificate storage directory
+  file:
+    path: /etc/electrumx
+    state: directory
+    owner: root
+    group: root
+    mode: 0755
+
+
+- name: Copy SSL Key
+  command: cp /tmp/cert.key /etc/electrumx/server.key
+
+- name: Copy SSL Cert
+  command: cp /tmp/cert.pem /etc/electrumx/server.crt 

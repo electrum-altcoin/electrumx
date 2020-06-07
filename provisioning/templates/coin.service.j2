@@ -1,0 +1,17 @@
+[Unit]
+Description={{ coin_name }} Daemon
+After=network.target
+
+[Service]
+ExecStart=/usr/local/bin/{{ coind_name }} -daemon -conf={{ coin_config_file }} -pid=/run/{{ coind_name }}/{{ coind_name }}.pid
+
+# Creates /run/{{ coind_name }} owned by bitcoin
+RuntimeDirectory={{ coind_name }}
+User=root
+Type=forking
+PIDFile=/run/{{ coind_name }}/{{ coind_name }}.pid
+Restart=on-failure
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

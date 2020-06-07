@@ -1,0 +1,47 @@
+---
+- name: Create Coin Config Directory
+  file: 
+    path: "{{ coin_datadir }}"
+    state: directory
+
+- name: "Generate Coin Config"
+  template:
+    src: coin.conf.j2
+    dest: "{{ coin_config_file }}"
+
+- name: "Retrieve Coin Source Code"
+  git:
+    repo: "{{ coin_repo_url }}"
+    dest: /code
+    depth: 1
+    version: "{{ coin_version }}"
+
+- name: "Setup Coin AutoTools"
+  command: "./autogen.sh"
+  args:
+    chdir: /code
+
+- name: "Configure Coin Compile"
+  command: "./configure --with-incompatible-bdb"
+  args:
+    chdir: /code
+
+- name: "Install Coin"
+  command: "make install"
+  args:
+    chdir: "/code"
+
+- name: Install Coin Systemd
+  become: true
+  template:
+    src: "coin.service.j2"
+    dest: "/lib/systemd/system/{{ coin_name }}.service"
+    force: true
+
+- name: Enable Coin Daemon
+  become: true
+  service:
+    name: "{{ coin_name }}"
+    enabled: true
+    daemon_reload: yes
+    state: started

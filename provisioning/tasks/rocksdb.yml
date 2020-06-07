@@ -1,0 +1,23 @@
+- name: Download RocksDB Source Code
+  git:
+    repo: https://github.com/facebook/rocksdb.git
+    dest: /tmp/rocksdb
+    version: v6.10.1
+
+- name: Compile RocksDB
+  command: "make -j {{ makejob }} shared_lib"
+  args:
+    chdir: /tmp/rocksdb
+
+- name: Install RocksDB Library
+  command: make install-shared INSTALL_PATH=/usr
+  args:
+    chdir: /tmp/rocksdb
+
+- name: Install RocksDB Python Binding
+  pip: 
+    name: ["python-rocksdb", "plyvel"]
+    executable: pip3
+
+- name: Update Library Caches
+  command: /usr/sbin/ldconfig

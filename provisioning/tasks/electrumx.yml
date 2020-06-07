@@ -1,0 +1,71 @@
+---
+- name: Install Uvloop
+  pip: name=uvloop executable=pip3
+
+- name: Clone Electrumx
+  git:
+    repo: '{{ project_repo }}'
+    dest: '{{ project_root }}'
+    version: '{{ project_branch }}'
+  when: env != "dev"
+
+- name: Install Electrumx
+  command: python3 setup.py install
+  args:
+    chdir: '{{ project_root }}'
+
+- name: Install LevelDB Python Binding
+  pip: 
+    name: ["plyvel"]
+    executable: pip3
+    
+- name: Setup ElectrumX Systemd
+  template: 
+    src: "templates/electrumx.service.j2"
+    dest: "/etc/systemd/system/electrumx.service"
+    owner: root
+    group: root
+
+- name: Configure ElectrumX
+  template:
+    src: "templates/electrumx.conf.j2"
+    dest: "/etc/electrumx.conf"
+    owner: root
+    group: root
+
+- name: Copy ElectrumX Compact History script to /usr/bin
+  command: cp electrumx_compact_history /usr/local/bin
+  args:
+    chdir: "{{ project_root }}"
+
+- name: Copy ElectrumX AutoCompact Script to /usr/bin
+  template:
+    src: "templates/electrumx_autocompact.sh.j2"
+    dest: "/usr/local/bin/electrumx_autocompact.sh"
+    owner: root
+    group: root 
+    mode: 0755
+
+- name: Setup ElectrumX Cronjob
+  template:
+    src: "templates/electrumx_cron.j2"
+    dest: "/etc/cron.daily/electrumx"
+    owner: root
+    group: root
+    mode: 0700
+
+- name: Create ElectrumX Database Dir
+  file:
+    path: "{{ database_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: 0700
+
+- name: Enable ElectrumX
+  become: true
+  service:
+    name: "electrumx"
+    enabled: true
+    daemon_reload: yes
+    state: started
