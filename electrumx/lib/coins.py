@@ -43,6 +43,7 @@ from electrumx.lib.hash import HASHX_LEN, hex_str_to_hash
 from electrumx.lib.script import (_match_ops, Script, ScriptError,
                                   ScriptPubKey, OpCodes)
 import electrumx.lib.tx as lib_tx
+import electrumx.lib.tx_crown as lib_tx_crown
 import electrumx.lib.tx_dash as lib_tx_dash
 import electrumx.lib.tx_axe as lib_tx_axe
 import electrumx.server.block_processor as block_proc
@@ -1860,7 +1861,9 @@ class Crown(AuxPowMixin, Coin):
         'lon-crwseed.crowndns.info s t',
         'fra-crwseed.crowndns.info s t',
     ]
-
+    SESSIONCLS = DashElectrumX
+    DAEMON = daemon.DashDaemon
+    DESERIALIZER = lib_tx_crown.DeserializerCrown
 
 class Fujicoin(Coin):
     NAME = "Fujicoin"
