@@ -1,0 +1,6 @@
+---
+staging:
+  hosts:
+    electrumx.multicoin.co:
+  vars:
+    env: staging

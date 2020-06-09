@@ -1,0 +1,33 @@
+- name: Check whether swap is already enabled or not
+  shell: cat /etc/sysctl.conf
+  register: swap_enabled
+
+- block:
+  - name: Create Swap File
+    command: "dd if=/dev/zero of=/swapfile bs={{ swap_size }} count=4"
+
+  - name: Set Swap Permissions
+    file: path=/swapfile mode=600 state=file
+
+  - name: Create Swap
+    command: mkswap /swapfile
+    
+  - name: Mount Swap
+    command: swapon /swapfile
+
+  - name: Add Swapfile to fstab
+    action: lineinfile dest=/etc/fstab regexp="swapfile" line="/swapfile none swap sw 0 0" state=present
+
+  - name: Start swap
+    command: swapon -a
+
+  - name: Set swapiness
+    sysctl:
+      name: vm.swappiness
+      value: "10"
+
+  - name: Set Cache Pressure
+    sysctl:
+      name: vm.vfs_cache_pressure
+      value: "50"
+  when: swap_enabled.stdout.find('swappiness') == -1
