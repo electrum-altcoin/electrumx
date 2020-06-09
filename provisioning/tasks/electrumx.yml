@@ -32,6 +32,8 @@
     dest: "/etc/electrumx.conf"
     owner: root
     group: root
+  notify:
+    - Restart ElectrumX
 
 - name: Copy ElectrumX Compact History script to /usr/bin
   command: cp electrumx_compact_history /usr/local/bin

@@ -3,13 +3,16 @@
   vars_files:
     - vars.yml
   become: true
+#  roles:
+#    - { role: geerlingguy.apache }
+#    - { role: geerlingguy.php }
 
   tasks:
     - include: tasks/apt.yml
-      tags: ['apt']
-    
-    - include: tasks/coin.yml
-      tags: ['coin']
+      tags: ['apt']    
+
+    - include: tasks/coins/bitcoin.yml
+      tags: ['bitcoin']
 
 #    - include: tasks/rocksdb.yml
 #      tags: ['rocksdb']
@@ -18,5 +21,12 @@
       tags: ['ssl']
 
     - include: tasks/electrumx.yml
-      tags:
-        - electrumx
+      tags: ['electrumx'] 
+
+#    - include: tasks/dashboard.yml
+#      tags: ['dashboard']
+  handlers:
+    - name: Restart ElectrumX
+      service:
+        name: electrumx
+        state: restarted

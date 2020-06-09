@@ -5,7 +5,9 @@ DAEMON_URL = http://{{ coind_user }}:{{ coind_password }}@{{ coind_host }}:{{ co
 DB_ENGINE = leveldb
 EVENT_LOOP_POLICY = uvloop
 MAX_SEND = {{ max_send }}
-
 SSL_CERTFILE=/etc/electrumx/server.crt
 SSL_KEYFILE=/etc/electrumx/server.key
 ALLOW_ROOT=1
+SERVICES=tcp://:50001,ssl://:50002,wss://:50004,rpc://0.0.0.0:8000
+REPORT_SERVICES=tcp://electrumx.multicoin.co:50001,ssl://electrumx.multicoin.co:50002,wss://electrumx.multicoin.co:50004
+LOG_LEVEL=debug

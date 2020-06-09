@@ -1,0 +1,17 @@
+---
+- name: "Retrieve Dashboard Source Code"
+  git:
+    repo: "https://github.com/ahmedbodi/electrumx-dashboard"
+    dest: /var/www/vhosts/dashboard
+    version: "master"
+
+- name: "Generate Dashboard Config"
+  template:
+    src: dashboard.php.j2
+    dest: "/var/www/vhosts/dashboard/src/Config.php"
+
+- name: Ensure Dashboard directories are 0755
+  command: find /var/www/vhosts/dashboard/ -type d -exec chmod 0755 {} \;
+
+- name: Ensure Dashboard files are 0644
+  command: find /var/www/vhosts/dashboard/ -type f -exec chmod 0644 {} \;

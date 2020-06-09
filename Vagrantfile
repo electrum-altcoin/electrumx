@@ -8,7 +8,6 @@ Vagrant.configure("2") do |config|
 
   config.vm.define "electrumx.multicoin.co", autostart: true, primary: true do |t|
     t.vm.box = "geerlingguy/ubuntu2004"
-
     t.vm.synced_folder "./", "/home/electrumx"
 
     # Pre provisioning, install required tools for the ansible run
@@ -25,9 +24,14 @@ Vagrant.configure("2") do |config|
     end
 
     t.vm.provider "virtualbox" do |v|
-      v.memory = 2048
+      v.memory = 4096
       v.cpus = 4
+      v.customize ["modifyvm", :id, "--nictype1", "virtio" ]
+      v.customize ["modifyvm", :id, "--nictype2", "virtio" ]
+      v.customize ["modifyvm", :id, "--natdnshostresolver1", "on"]
+      v.customize ["modifyvm", :id, "--natdnsproxy1", "on"]
     end
+
 
     t.vm.network :private_network, ip: "192.168.33.90"
     t.vm.hostname = "electrumx.multicoin.co"

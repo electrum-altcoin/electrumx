@@ -25,9 +25,12 @@ coind_password: password
 database_dir: /etc/electrumx_db
 tcp_port: 50001
 ssl_port: 50002
+rpc_port: 8000
 max_send: 50000000
 bandwidth_limit: 2000000000
 makejob: 2
+
+dashboard_password: vagrant
 
 system_packages:
   - liblz4-dev
@@ -57,3 +60,21 @@ system_packages:
   - python3
   - python3-dev
   - python3-pip
+  - libapache2-mod-php
+
+apache_listen_port: 80
+apache_vhosts:
+  - {servername: "electrumx.multicoin.co", documentroot: "/var/www/vhosts/dashboard"}  
+apache_remove_default_vhost: true
+
+php_memory_limit: "128M"
+php_max_execution_time: "90"
+php_upload_max_filesize: "256M"
+php_packages:
+  - php
+  - php-cli
+  - php-common
+  - php-gd
+  - php-mbstring
+  - php-xml
+  - php-sockets
