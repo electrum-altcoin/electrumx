@@ -1,22 +1,23 @@
 ---
 project_root: /home/electrumx
 project_repo: https://github.com/ahmedbodi/electrumx-altcoin
-project_branch: master
+project_branch: crowncoin
 
-coin_name: BitcoinSegwit
-coin_version: v0.20.0
-coin_repo_url: https://github.com/bitcoin/bitcoin.git
+coin_name: Crown
+coin_version: v0.14.0.1-Emerald
+coin_repo_url: https://github.com/Crowndev/crown-core
 coin_config:
   - "printtoconsole=1"
   - "rpcpassword=password"
   - "rpcuser=username"
+  - "rpcport=8332"
   - "daemon=1"
   - "txindex=1"
-coin_datadir: /root/.bitcoin
-coin_config_file: "{{ coin_datadir }}/bitcoin.conf"
+coin_datadir: /root/.crown
+coin_config_file: "{{ coin_datadir }}/crown.conf"
 
 coin_network: mainnet
-coind_name: bitcoind
+coind_name: crownd
 coind_host: localhost
 coind_port: 8332
 coind_user: username
@@ -31,6 +32,8 @@ bandwidth_limit: 2000000000
 makejob: 2
 
 dashboard_password: vagrant
+
+swap_size: 3G
 
 system_packages:
   - liblz4-dev
@@ -61,6 +64,8 @@ system_packages:
   - python3-dev
   - python3-pip
   - libapache2-mod-php
+  - zip
+  - unzip
 
 apache_listen_port: 80
 apache_vhosts:

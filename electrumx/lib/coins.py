@@ -1837,7 +1837,7 @@ class MonacoinRegtest(MonacoinTestnet):
     TX_COUNT_HEIGHT = 1
 
 
-class Crown(AuxPowMixin, Coin):
+class Crown(AuxPowMixin, Dash):
     NAME = "Crown"
     SHORTNAME = "CRW"
     NET = "mainnet"
