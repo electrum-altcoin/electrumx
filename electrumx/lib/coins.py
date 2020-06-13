@@ -1852,8 +1852,10 @@ class Crown(AuxPowMixin, Dash):
     RPC_PORT = 9341
     REORG_LIMIT = 1000
     PEERS = []
+    ESTIMATE_FEE = 0.0001
+    RELAY_FEE = 0.0001
     SESSIONCLS = AuxPoWElectrumX
-    DAEMON = daemon.DashDaemon
+    DAEMON = daemon.FakeEstimateFeeDaemon
     DESERIALIZER = lib_tx_crown.DeserializerCrown
 
 class Fujicoin(Coin):
