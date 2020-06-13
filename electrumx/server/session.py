@@ -1267,8 +1267,6 @@ class ElectrumX(SessionBase):
         protocol_version: the protocol version spoken by the client
         '''
         self.bump_cost(0.5)
-        if self.sv_seen:
-            raise RPCError(BAD_REQUEST, f'server.version already sent')
         self.sv_seen = True
 
         if client_name:
