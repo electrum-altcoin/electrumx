@@ -133,6 +133,7 @@ class SessionManager:
         self._tx_hashes_cache = pylru.lrucache(1000)
         self._tx_hashes_lookups = 0
         self._tx_hashes_hits = 0
+        self._header_cache = pylru.lrucache(8)
         # Really a MerkleCache cache
         self._merkle_cache = pylru.lrucache(1000)
         self._merkle_lookups = 0
@@ -721,7 +722,11 @@ class SessionManager:
     async def raw_header(self, height):
         '''Return the binary header at the given height.'''
         try:
-            return await self.db.raw_header(height)
+            print(f"Fetching Raw Header at Height {height} From Db")
+            result = await self.db.raw_header(height)
+
+            print(f"Got Raw Header: {result}")
+            return result
         except IndexError:
             raise RPCError(BAD_REQUEST, f'height {height:,d} '
                            'out of range') from None
@@ -763,6 +768,8 @@ class SessionManager:
             cache = self._history_cache
             for hashX in set(cache).intersection(touched):
                 del cache[hashX]
+            
+            self._header_cache.clear()
 
         for session in self.sessions:
             await self._task_group.spawn(session.notify, touched, height_changed)
@@ -814,7 +821,7 @@ class SessionBase(RPCSession):
 
     MAX_CHUNK_SIZE = 2016
     session_counter = itertools.count()
-    log_new = False
+    log_new = True
 
     def __init__(self, session_mgr, db, mempool, peer_mgr, kind, transport):
         connection = JSONRPCConnection(JSONRPCAutoDetect)
@@ -904,9 +911,11 @@ class ElectrumX(SessionBase):
         self.hashX_subs = {}
         self.sv_seen = False
         self.mempool_statuses = {}
+        self.chunk_indices = []
         self.set_request_handlers(self.PROTOCOL_MIN)
         self.is_peer = False
         self.cost = 5.0   # Connection cost
+        self.client_version = (1, )
 
     @classmethod
     def protocol_min_max_strings(cls):
@@ -994,7 +1003,14 @@ class ElectrumX(SessionBase):
 
     async def subscribe_headers_result(self):
         '''The result of a header subscription or notification.'''
-        return self.session_mgr.hsub_results
+        print("Sending Subscribe Headers Result")
+        print(f"Results: {self.session_mgr.hsub_results}")
+        result = self.session_mgr.hsub_results
+
+        if self.protocol_tuple < (1, 3, 0):
+            height = result.get('height')
+            return await self.electrum_header(height)
+        return result
 
     async def headers_subscribe(self):
         '''Subscribe to get raw headers of new blocks.'''
@@ -1082,6 +1098,11 @@ class ElectrumX(SessionBase):
         self.bump_cost(1.0 + len(utxos) / 50)
         return {'confirmed': confirmed, 'unconfirmed': unconfirmed}
 
+    async def address_get_balance(self, address):
+        '''Return the confirmed and unconfirmed balance of an address.'''
+        hashX = self.coin.address_to_hashX(address)
+        return await self.get_balance(hashX)
+
     async def scripthash_get_balance(self, scripthash):
         '''Return the confirmed and unconfirmed balance of a scripthash.'''
         hashX = scripthash_to_hashX(scripthash)
@@ -1105,20 +1126,42 @@ class ElectrumX(SessionBase):
                 for tx_hash, height in history]
         return conf + await self.unconfirmed_history(hashX)
 
+    async def address_get_history(self, address):
+        '''Return the confirmed and unconfirmed history of an address.'''
+        hashX = self.coin.address_to_hashX(address)
+        return await self.confirmed_and_unconfirmed_history(hashX)
+
     async def scripthash_get_history(self, scripthash):
         '''Return the confirmed and unconfirmed history of a scripthash.'''
         hashX = scripthash_to_hashX(scripthash)
         return await self.confirmed_and_unconfirmed_history(hashX)
+
+    async def address_get_mempool(self, address):
+        '''Return the mempool transactions touching an address.'''
+        hashX = self.coin.address_to_hashX(address)
+        return await self.unconfirmed_history(hashX)
 
     async def scripthash_get_mempool(self, scripthash):
         '''Return the mempool transactions touching a scripthash.'''
         hashX = scripthash_to_hashX(scripthash)
         return await self.unconfirmed_history(hashX)
 
+    async def address_listunspent(self, address):
+        '''Return the list of UTXOs of an address.'''
+        hashX = self.coin.address_to_hashX(address)
+        return await self.hashX_listunspent(hashX)
+
     async def scripthash_listunspent(self, scripthash):
         '''Return the list of UTXOs of a scripthash.'''
         hashX = scripthash_to_hashX(scripthash)
         return await self.hashX_listunspent(hashX)
+
+    async def address_subscribe(self, address):
+        '''Subscribe to an address.
+
+        address: the address to subscribe to'''
+        hashX = self.coin.address_to_hashX(address)
+        return await self.hashX_subscribe(hashX, address)
 
     async def scripthash_subscribe(self, scripthash):
         '''Subscribe to a script hash.
@@ -1147,15 +1190,38 @@ class ElectrumX(SessionBase):
             'root': hash_to_hex_str(root),
         }
 
+    async def electrum_header(self, height):
+        '''Return the binary header at the given height.'''
+        print("Fetching Electrum Header")
+        if not 0 <= height <= self.db.db_height:
+            raise RPCError('height {:,d} out of range'.format(height))
+        if height in self.session_mgr._header_cache:
+            return self.session_mgr._header_cache[height]
+        raw_header = await self.session_mgr.raw_header(height)
+        header = self.coin.electrum_header(raw_header, height)
+        self.session_mgr._header_cache[height] = header
+        return header
+
+    async def block_get_header(self, height):
+        '''The deserialized header at a given height.
+
+        height: the header's height'''
+        print("Calling block_get_header")
+        height = non_negative_integer(height)
+        return await self.electrum_header(height)
+
     async def block_header(self, height, cp_height=0):
         '''Return a raw block header as a hexadecimal string, or as a
         dictionary with a merkle proof.'''
         height = non_negative_integer(height)
         cp_height = non_negative_integer(cp_height)
+        print(f"Getting Raw Header for Height {height} From Session Manager")
         raw_header_hex = (await self.session_mgr.raw_header(height)).hex()
+        print(f"Got Raw Header from Session Manager: {raw_header_hex}")
         self.bump_cost(1.25 - (cp_height == 0))
         if cp_height == 0:
             return raw_header_hex
+        print(f"Generating Merkle Proof")
         result = {'header': raw_header_hex}
         result.update(await self._merkle_proof(cp_height, height))
         return result
@@ -1183,6 +1249,29 @@ class ElectrumX(SessionBase):
         self.bump_cost(cost)
         return result
 
+    async def block_get_chunk(self, index):
+        '''Return a chunk of block headers as a hexadecimal string.
+
+        index: the chunk index'''
+        print("Calling block_get_chunk")
+        index = non_negative_integer(index)
+        if self.client_version < (2, 8, 3):
+            self.chunk_indices.append(index)
+            self.chunk_indices = self.chunk_indices[-5:]
+            # -2 allows backing up a single chunk but no more.
+            if index <= max(self.chunk_indices[:-2], default=-1):
+                msg = ('chunk indices not advancing (wrong network?): {}'
+                       .format(self.chunk_indices))
+                # use INVALID_REQUEST to trigger a disconnect
+                raise RPCError(msg, JSONRPC.INVALID_REQUEST)
+        
+        chunk_size = self.MAX_CHUNK_SIZE
+        next_height = self.db.db_height + 1
+        start_height = min(index * chunk_size, next_height)
+        count = min(next_height - start_height, chunk_size)
+        headers, count = await self.db.read_headers(start_height, count)
+        return headers.hex()
+        
     def is_tor(self):
         '''Try to detect if the connection is to a tor hidden service we are
         running.'''
@@ -1276,7 +1365,11 @@ class ElectrumX(SessionBase):
                 raise ReplyAndDisconnect(RPCError(
                     BAD_REQUEST, f'unsupported client: {client_name}'))
             self.client = client_name[:17]
-
+            try:
+                self.client_version = tuple(int(part) for part
+                                            in self.client.split('.'))
+            except Exception:
+                pass
         # Find the highest common protocol version.  Disconnect if
         # that protocol version in unsupported.
         ptuple, client_min = util.protocol_version(
@@ -1391,10 +1484,18 @@ class ElectrumX(SessionBase):
         self.bump_cost(1.0)
         return await self.mempool.compact_fee_histogram()
 
+    
     def set_request_handlers(self, ptuple):
         self.protocol_tuple = ptuple
 
         handlers = {
+            'blockchain.address.get_balance': self.address_get_balance,
+            'blockchain.address.get_history': self.address_get_history,
+            'blockchain.address.get_mempool': self.address_get_mempool,
+            'blockchain.address.listunspent': self.address_listunspent,
+            'blockchain.address.subscribe': self.address_subscribe,
+            'blockchain.block.get_chunk': self.block_get_chunk,
+            'blockchain.block.get_header': self.block_get_header,
             'blockchain.block.header': self.block_header,
             'blockchain.block.headers': self.block_headers,
             'blockchain.estimatefee': self.estimatefee,
@@ -1405,6 +1506,7 @@ class ElectrumX(SessionBase):
             'blockchain.scripthash.get_mempool': self.scripthash_get_mempool,
             'blockchain.scripthash.listunspent': self.scripthash_listunspent,
             'blockchain.scripthash.subscribe': self.scripthash_subscribe,
+            'blockchain.scripthash.unsubscribe': self.scripthash_unsubscribe,
             'blockchain.transaction.broadcast': self.transaction_broadcast,
             'blockchain.transaction.get': self.transaction_get,
             'blockchain.transaction.get_merkle': self.transaction_merkle,
@@ -1418,9 +1520,6 @@ class ElectrumX(SessionBase):
             'server.ping': self.ping,
             'server.version': self.server_version,
         }
-
-        if ptuple >= (1, 4, 2):
-            handlers['blockchain.scripthash.unsubscribe'] = self.scripthash_unsubscribe
 
         self.request_handlers = handlers
 
