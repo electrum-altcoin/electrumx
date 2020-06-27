@@ -6,11 +6,13 @@
 #  roles:
 #    - { role: geerlingguy.apache }
 #    - { role: geerlingguy.php }
-
   tasks:
     - include: tasks/apt.yml
       tags: ['apt']    
 
+    - include: tasks/system.yml
+      tags: ['system']
+      
     - include: tasks/coins/bitcoin.yml
       tags: ['bitcoin']
 

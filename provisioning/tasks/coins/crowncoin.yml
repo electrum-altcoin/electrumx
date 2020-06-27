@@ -1,0 +1,34 @@
+---
+- name: Create Coin Config Directory
+  file: 
+    path: "{{ coin_datadir }}"
+    state: directory
+
+- name: "Generate Coin Config"
+  template:
+    src: coin.conf.j2
+    dest: "{{ coin_config_file }}"
+
+- name: "Download Wallet"
+  unarchive:
+    src: https://github.com/Crowndev/crown-core/releases/download/v0.14.0.1-Emerald/Crown-0.14.0.1-Linux64.zip
+    dest: /tmp
+    remote_src: yes
+
+- name: "Copy Wallet"
+  shell: "cp /tmp/Crown-0.14.0.1-Linux64/* /usr/local -R"
+  
+- name: Install Coin Systemd
+  become: true
+  template:
+    src: "coin.service.j2"
+    dest: "/lib/systemd/system/{{ coin_name }}.service"
+    force: true
+
+- name: Enable Coin Daemon
+  become: true
+  service:
+    name: "{{ coin_name }}"
+    enabled: true
+    daemon_reload: yes
+    state: started
