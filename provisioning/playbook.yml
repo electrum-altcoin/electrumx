@@ -13,8 +13,8 @@
     - include: tasks/system.yml
       tags: ['system']
       
-    - include: tasks/coins/bitcoin.yml
-      tags: ['bitcoin']
+    - include: tasks/coins/donu.yml
+      tags: ['donu']
 
 #    - include: tasks/rocksdb.yml
 #      tags: ['rocksdb']

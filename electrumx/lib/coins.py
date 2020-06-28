@@ -51,7 +51,6 @@ import electrumx.server.daemon as daemon
 from electrumx.server.session import (ElectrumX, DashElectrumX,
                                       SmartCashElectrumX, AuxPoWElectrumX)
 
-
 Block = namedtuple("Block", "raw header transactions")
 
 
@@ -310,7 +309,6 @@ class EquihashMixin(object):
 
 
 class ScryptMixin(object):
-
     DESERIALIZER = lib_tx.DeserializerTxTime
     HEADER_HASH = None
 
@@ -560,7 +558,7 @@ class BitcoinSV(BitcoinMixin, Coin):
 
 
 class BitcoinCash(BitcoinMixin, Coin):
-    NAME = "BitcoinCashABC"   # Some releases later remove the ABC suffix
+    NAME = "BitcoinCashABC"  # Some releases later remove the ABC suffix
     SHORTNAME = "BCH"
     TX_COUNT = 265479628
     TX_COUNT_HEIGHT = 556592
@@ -969,7 +967,7 @@ class LitecoinRegtest(LitecoinTestnet):
 
 
 class BitcoinCashRegtest(BitcoinTestnetMixin, Coin):
-    NAME = "BitcoinCashABC"   # Some releases later remove the ABC suffix
+    NAME = "BitcoinCashABC"  # Some releases later remove the ABC suffix
     NET = "regtest"
     PEERS = []
     GENESIS_HASH = ('0f9188f13cb7b2c71f2a335e3a4fc328'
@@ -1665,6 +1663,32 @@ class Peercoin(Coin):
     VALUE_PER_COIN = 1000000
 
 
+class Donu(Coin):
+    NAME = "Donu"
+    SHORTNAME = "DONU"
+    NET = "mainnet"
+    P2PKH_VERBYTE = bytes.fromhex("53")
+    P2SH_VERBYTES = [bytes.fromhex("05")]
+    WIF_BYTE = bytes.fromhex("b7")
+    GENESIS_HASH = ('0000000032fe677166d54963b62a4677'
+                    'd8957e87c508eaa4fd7eb1c880cd27e3')
+    DESERIALIZER = lib_tx.DeserializerTxTimeSegWit
+    DAEMON = daemon.FakeEstimateFeeDaemon
+    ESTIMATE_FEE = 0.001
+    RELAY_FEE = 0.01
+    TX_COUNT = 1691771
+    TX_COUNT_HEIGHT = 455409
+    TX_PER_BLOCK = 4
+    RPC_PORT = 9902
+    REORG_LIMIT = 5000
+
+    PEERS = [
+        "electrum.peercoinexplorer.net s"
+    ]
+
+    VALUE_PER_COIN = 1000000
+
+
 class PeercoinTestnet(Peercoin):
     NAME = "PeercoinTestnet"
     SHORTNAME = "tPPC"
@@ -1857,6 +1881,7 @@ class Crown(AuxPowMixin, Dash):
     SESSIONCLS = AuxPoWElectrumX
     DAEMON = daemon.FakeEstimateFeeDaemon
     DESERIALIZER = lib_tx_crown.DeserializerCrown
+
 
 class Fujicoin(Coin):
     NAME = "Fujicoin"
@@ -2489,7 +2514,7 @@ class Zcoin(Coin):
     def is_mtp(cls, header):
         from electrumx.lib.util import unpack_le_uint32_from, hex_to_bytes
         if isinstance(header, str):
-            nVersion, = unpack_le_uint32_from(hex_to_bytes(header[0:4*2]))
+            nVersion, = unpack_le_uint32_from(hex_to_bytes(header[0:4 * 2]))
         elif isinstance(header, bytes):
             nVersion, = unpack_le_uint32_from(header[0:4])
         else:
@@ -2795,7 +2820,6 @@ class PivxTestnet(Pivx):
 
 
 class Bitg(Coin):
-
     NAME = "BitcoinGreen"
     SHORTNAME = "BITG"
     NET = "mainnet"
@@ -3124,7 +3148,7 @@ class Ravencoin(Coin):
     GENESIS_HASH = ('0000006b444bc2f2ffe627be9d9e7e7a'
                     '0730000870ef6eb6da46c8eae389df90')
     DESERIALIZER = lib_tx.DeserializerSegWit
-    X16RV2_ACTIVATION_TIME = 1569945600   # algo switch to x16rv2 at this timestamp
+    X16RV2_ACTIVATION_TIME = 1569945600  # algo switch to x16rv2 at this timestamp
     KAWPOW_ACTIVATION_TIME = 1588788000  # kawpow algo activation time
     KAWPOW_ACTIVATION_HEIGHT = 1219736
     KAWPOW_HEADER_SIZE = 120
@@ -3143,7 +3167,7 @@ class Ravencoin(Coin):
             result = height * cls.BASIC_HEADER_SIZE
         else:  # RVN block header size increased with kawpow fork
             baseoffset = cls.KAWPOW_ACTIVATION_HEIGHT * cls.BASIC_HEADER_SIZE
-            result = baseoffset + ((height-cls.KAWPOW_ACTIVATION_HEIGHT) * cls.KAWPOW_HEADER_SIZE)
+            result = baseoffset + ((height - cls.KAWPOW_ACTIVATION_HEIGHT) * cls.KAWPOW_HEADER_SIZE)
         return result
 
     @classmethod
@@ -3421,6 +3445,7 @@ class XayaRegtest(XayaTestnet):
     GENESIS_HASH = ('6f750b36d22f1dc3d0a6e483af453010'
                     '22646dfc3b3ba2187865f5a7d6d83ab1')
     RPC_PORT = 18493
+
 
 # Source: https://github.com/GZR0/GRZ0
 
@@ -3848,25 +3873,6 @@ class Aryacoin(Coin):
     REORG_LIMIT = 800
 
 
-class Donu(Coin):
-    NAME = "donu"
-    SHORTNAME = "DONU"
-    NET = "mainnet"
-    P2PKH_VERBYTE = bytes.fromhex("35")
-    P2SH_VERBYTES = [bytes.fromhex("05")]
-    WIF_BYTE = bytes.fromhex("b1")
-    XPUB_VERBYTES = bytes.fromhex("0488B21E")
-    XPRV_VERBYTES = bytes.fromhex("0488ADE4")
-    GENESIS_HASH = ('5f7f26e24291f5be2351e1dcdab18bf9'
-                    '4cee718940e6b9f2fbb46227434c3f12')
-    DESERIALIZER = lib_tx.DeserializerSegWit
-    TX_COUNT = 1
-    TX_COUNT_HEIGHT = 1
-    TX_PER_BLOCK = 10
-    RPC_PORT = 26381
-    REORG_LIMIT = 800
-
-
 class Quebecoin(AuxPowMixin, Coin):
     NAME = "Quebecoin"
     SHORTNAME = "QBC"
@@ -3884,3 +3890,26 @@ class Quebecoin(AuxPowMixin, Coin):
     TX_PER_BLOCK = 20
     REORG_LIMIT = 2000
     RPC_PORT = 10890
+
+
+class Donu(Coin):
+    NAME = "Donu"
+    SHORTNAME = "DONU"
+    NET = "mainnet"
+    P2PKH_VERBYTE = bytes.fromhex("53")
+    P2SH_VERBYTES = [bytes.fromhex("05")]
+    WIF_BYTE = bytes.fromhex("80")
+    XPUB_VERBYTES = bytes.fromhex("0488B21E")
+    XPRV_VERBYTES = bytes.fromhex("0488ADE4")
+    GENESIS_HASH = '000000008507af1fdaaf3fed6173005b23b0febf72e7c2094f11f1d057692182'
+    DESERIALIZER = lib_tx.DeserializerTxTimeSegWit
+    DAEMON = daemon.FakeEstimateFeeDaemon
+    TX_COUNT = 1
+    TX_COUNT_HEIGHT = 1
+    TX_PER_BLOCK = 10
+    RPC_PORT = 15667
+    ESTIMATE_FEE = 0.001
+    RELAY_FEE = 0.01
+    REORG_LIMIT = 5000
+    PEERS = []
+    VALUE_PER_COIN = 1000000
