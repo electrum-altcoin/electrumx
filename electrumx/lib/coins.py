@@ -3849,22 +3849,26 @@ class Aryacoin(Coin):
 
 
 class Donu(Coin):
-    NAME = "donu"
+    NAME = "Donu"
     SHORTNAME = "DONU"
     NET = "mainnet"
-    P2PKH_VERBYTE = bytes.fromhex("35")
+    P2PKH_VERBYTE = bytes.fromhex("53")
     P2SH_VERBYTES = [bytes.fromhex("05")]
-    WIF_BYTE = bytes.fromhex("b1")
+    WIF_BYTE = bytes.fromhex("80")
     XPUB_VERBYTES = bytes.fromhex("0488B21E")
     XPRV_VERBYTES = bytes.fromhex("0488ADE4")
-    GENESIS_HASH = ('5f7f26e24291f5be2351e1dcdab18bf9'
-                    '4cee718940e6b9f2fbb46227434c3f12')
-    DESERIALIZER = lib_tx.DeserializerSegWit
+    GENESIS_HASH = '000000008507af1fdaaf3fed6173005b23b0febf72e7c2094f11f1d057692182'
+    DESERIALIZER = lib_tx.DeserializerTxTimeSegWit
+    DAEMON = daemon.FakeEstimateFeeDaemon
     TX_COUNT = 1
     TX_COUNT_HEIGHT = 1
     TX_PER_BLOCK = 10
-    RPC_PORT = 26381
-    REORG_LIMIT = 800
+    RPC_PORT = 15667
+    ESTIMATE_FEE = 0.001
+    RELAY_FEE = 0.01
+    REORG_LIMIT = 5000
+    PEERS = []
+    VALUE_PER_COIN = 1000000
 
 
 class Quebecoin(AuxPowMixin, Coin):
