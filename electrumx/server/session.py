@@ -1211,7 +1211,7 @@ class ElectrumX(SessionBase):
             next_cursor = self.db.header_offset(height + 1)
             header = headers[cursor:next_cursor]
             result['headers'].append(header)
-            cursor += next_cursor
+            cursor = next_cursor
             height += 1
 
         self.bump_cost(cost)
