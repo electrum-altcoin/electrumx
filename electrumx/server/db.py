@@ -449,14 +449,24 @@ class DB(object):
         if headers_count != count:
             raise self.DBError('only got {:,d} headers starting at {:,d}, not '
                                '{:,d}'.format(headers_count, height, count))
-        offset = 0
-        headers = []
-        for n in range(count):
-            hlen = self.header_len(height + n)
-            headers.append(headers_concat[offset:offset + hlen])
-            offset += hlen
 
-        return [self.coin.header_hash(header) for header in headers]
+        # The split-and-hash loop below is synchronous and, for AuxPow chains
+        # (e.g. Dogecoin) where STATIC_BLOCK_HEADERS is False, calls
+        # dynamic_header_len for each block, which performs two disk reads per
+        # call. For chains with millions of blocks this monopolises the
+        # asyncio event loop (GIL-locked main thread) and starves the
+        # SessionManager so client connections accept but never get responses.
+        # Run the sync work in a worker thread to keep the event loop free.
+        def split_and_hash():
+            offset = 0
+            headers = []
+            for n in range(count):
+                hlen = self.header_len(height + n)
+                headers.append(headers_concat[offset:offset + hlen])
+                offset += hlen
+            return [self.coin.header_hash(header) for header in headers]
+
+        return await run_in_thread(split_and_hash)
 
     async def limited_history(self, hashX, *, limit=1000):
         '''Return an unpruned, sorted list of (tx_hash, height) tuples of
